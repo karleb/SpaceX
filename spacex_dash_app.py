@@ -15,8 +15,8 @@ min_payload = spacex_df['Payload Mass (kg)'].min()
 app = dash.Dash(__name__)
 
 # Create an app layout
-sites=spacex_df['Launch Site'].unique().tolist()
-sites.insert(0,'ALL')
+
+sites=sorted(['ALL']+list(set(spacex_df['Launch Site'])))
 
 app.layout = html.Div(children=[html.H1('SpaceX Launch Records Dashboard',
                                         style={'textAlign': 'center', 'color': '#503D36',
@@ -63,9 +63,9 @@ def get_pie(value):
         return fig
 
     else:
-        filtered_df = spacex_df[spacex_df['Launch Site'] == value].groupby(['Launch Site', 'class']).size().reset_index(name='class count')
+        filtered_df = spacex_df[spacex_df['Launch Site'] == value].groupby(['Launch Site', 'class']).size().reset_index(name='count')
         title = "Launch Success Rate for " + value
-        fig = px.pie(filtered_df,values='class count', names='class', title=title)
+        fig = px.pie(filtered_df,values='count', names='class', title=title)
         return fig
 
 # TASK 4:
@@ -76,17 +76,18 @@ Output(component_id='success-payload-scatter-chart', component_property='figure'
 Input(component_id='payload-slider', component_property='value')]
 )
 
-def get_scatter(value1,value2):
-    filtered_df2_1=spacex_df[(spacex_df['Payload Mass (kg)'] > value2[0]) & (spacex_df['Payload Mass (kg)'] < value2[1])]
+def get_scatter(site,range):
+    low,high = range
+    payload_df=spacex_df[(spacex_df['Payload Mass (kg)'] > low) & (spacex_df['Payload Mass (kg)'] < high)]
 
-    if value1=='ALL':
-        fig= px.scatter(filtered_df2_1,x="Payload Mass (kg)",y="class",color="Booster Version Category",
+    if site =='ALL':
+        fig= px.scatter(payload_df,x="Payload Mass (kg)",y="class",color="Booster Version Category",
                         title="Correlation between Payload and Success for All sites")
         return fig
     else :
-        filtered_df2_2=filtered_df2_1[filtered_df2_1['Launch Site']==value1]
-        fig= px.scatter(filtered_df2_2,x="Payload Mass (kg)",y="class",color="Booster Version Category",
-                        title=f"Correlation between Payload and Success for site {value1}")
+        payload_df_site=payload_df[payload_df['Launch Site']==site]
+        title="Correlation between Payload and Success for site "+site
+        fig= px.scatter(payload_df_site,x="Payload Mass (kg)",y="class",color="Booster Version Category", title=title)
         return fig
 
 # Run the app
